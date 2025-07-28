@@ -1,37 +1,51 @@
-import { sql } from "@/lib/neon"
 import { notFound } from "next/navigation"
+import Image from "next/image"
 import Link from "next/link"
-import ReactMarkdown from "react-markdown"
-import { Badge } from "@/components/ui/badge"
+import { ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Footer } from "@/components/footer"
+import fs from "fs"
+import path from "path"
+import type { Metadata } from "next"
 
-interface BlogPost {
-  id: number
-  title: string
-  slug: string
-  content: string
-  excerpt: string
-  created_at: string
-  updated_at: string
-  meta_title: string
-  meta_description: string
+const blogPosts = {
+  "receipt-vs-invoice": {
+    title: "Receipt vs Invoice: Understanding the Differences",
+    description:
+      "Learn the key differences between receipts and invoices, when to use each, and how they impact your business operations and tax obligations.",
+    image: "/Invoice vs Receipt.webp",
+    keywords: "receipt vs invoice, invoice receipt difference, business documents, accounting, tax records",
+  },
+  "invoice-payment-reminder": {
+    title: "Invoice Payment Reminder Tips: Get Paid Without Damaging Relationships",
+    description:
+      "Discover effective strategies for sending payment reminders that accelerate cash flow while maintaining positive client relationships.",
+    image: "/Invoice Payment Reminder.webp",
+    keywords: "invoice payment reminder, payment collection, cash flow, client relationships, overdue invoices",
+  },
+  "invoicing-guide-101": {
+    title: "Invoicing Guide 101: What You Need to Know",
+    description:
+      "Master the art of professional invoicing with this comprehensive guide covering legal requirements, best practices, and technology solutions.",
+    image: "/Invoicing Guide 101.webp",
+    keywords: "invoicing guide, professional invoicing, invoice best practices, business billing, invoice requirements",
+  },
+  "invoice-factoring": {
+    title: "Invoice Factoring for Noobs: Getting Paid Faster",
+    description:
+      "Learn how invoice factoring can transform your cash flow by converting unpaid invoices into immediate cash for business growth.",
+    image: "/Invoice Factoring.webp",
+    keywords: "invoice factoring, cash flow, business financing, accounts receivable, working capital",
+  },
 }
 
-async function getBlogPost(slug: string): Promise<BlogPost | null> {
-  try {
-    const posts = await sql`
-      SELECT id, title, slug, content, excerpt, created_at, updated_at, meta_title, meta_description
-      FROM blog_posts 
-      WHERE slug = ${slug} AND published = true
-    `
-    return (posts[0] as BlogPost) || null
-  } catch (error) {
-    console.error("Error fetching blog post:", error)
-    return null
-  }
+type Props = {
+  params: Promise<{ slug: string }>
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const post = await getBlogPost(params.slug)
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params
+  const post = blogPosts[slug as keyof typeof blogPosts]
 
   if (!post) {
     return {
@@ -40,98 +54,106 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 
   return {
-    title: post.meta_title || post.title,
-    description: post.meta_description || post.excerpt,
+    title: `${post.title} | Invoice Generator Blog`,
+    description: post.description,
+    keywords: post.keywords,
     openGraph: {
-      title: post.meta_title || post.title,
-      description: post.meta_description || post.excerpt,
+      title: post.title,
+      description: post.description,
+      images: [post.image],
       type: "article",
-      publishedTime: post.created_at,
-      modifiedTime: post.updated_at,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.description,
+      images: [post.image],
     },
   }
 }
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = await getBlogPost(params.slug)
+export default async function BlogPost({ params }: Props) {
+  const { slug } = await params
+  const post = blogPosts[slug as keyof typeof blogPosts]
 
   if (!post) {
     notFound()
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
+  // Read the HTML file content exactly as written
+  let htmlContent = ""
+  try {
+    const filePath = path.join(process.cwd(), "public", `${slug}.html`)
+    htmlContent = fs.readFileSync(filePath, "utf8")
+  } catch (error) {
+    notFound()
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <article className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <Link href="/blog" className="text-blue-600 hover:text-blue-800 font-medium mb-4 inline-block">
-            ← Back to Blog
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="container mx-auto px-4 py-8 flex-1">
+        <div className="max-w-4xl mx-auto">
+          {/* Back button */}
+          <Link href="/blog" className="inline-flex items-center mb-8">
+            <Button variant="ghost" className="pl-0">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Blog
+            </Button>
           </Link>
 
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
-
-          <div className="flex items-center gap-4 mb-6">
-            <Badge variant="secondary">Published {formatDate(post.created_at)}</Badge>
-            {post.updated_at !== post.created_at && (
-              <Badge variant="outline">Updated {formatDate(post.updated_at)}</Badge>
-            )}
+          {/* Featured image - not cropped */}
+          <div className="relative w-full h-64 md:h-80 mb-8 rounded-lg overflow-hidden">
+            <Image
+              src={post.image || "/placeholder.svg"}
+              alt={post.title}
+              fill
+              className="object-contain bg-gray-100"
+              priority
+            />
           </div>
 
-          {post.excerpt && <p className="text-xl text-gray-600 mb-8 leading-relaxed">{post.excerpt}</p>}
-        </div>
+          {/* Blog post title */}
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">{post.title}</h1>
 
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <div className="prose prose-lg max-w-none">
-            <ReactMarkdown
-              components={{
-                h1: ({ children }) => <h1 className="text-3xl font-bold mt-8 mb-4">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-2xl font-bold mt-6 mb-3">{children}</h2>,
-                h3: ({ children }) => <h3 className="text-xl font-bold mt-4 mb-2">{children}</h3>,
-                p: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
-                ul: ({ children }) => <ul className="mb-4 pl-6 space-y-2">{children}</ul>,
-                ol: ({ children }) => <ol className="mb-4 pl-6 space-y-2">{children}</ol>,
-                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                blockquote: ({ children }) => (
-                  <blockquote className="border-l-4 border-blue-500 pl-4 italic my-4 text-gray-700">
-                    {children}
-                  </blockquote>
-                ),
-                code: ({ children }) => (
-                  <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">{children}</code>
-                ),
-                pre: ({ children }) => (
-                  <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-4">{children}</pre>
-                ),
-                a: ({ href, children }) => (
-                  <a
-                    href={href}
-                    className="text-blue-600 hover:text-blue-800 underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {children}
-                  </a>
-                ),
-              }}
-            >
-              {post.content}
-            </ReactMarkdown>
+          {/* HTML content exactly as you wrote it - NO MODIFICATIONS */}
+          <article className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />
+
+          {/* Related posts */}
+          <div className="mt-16 pt-8 border-t">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Related Articles</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              {Object.entries(blogPosts)
+                .filter(([blogSlug]) => blogSlug !== slug)
+                .slice(0, 2)
+                .map(([blogSlug, relatedPost]) => (
+                  <Link key={blogSlug} href={`/blog/${blogSlug}`} className="group">
+                    <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="relative h-32 mb-3 rounded overflow-hidden">
+                        <Image
+                          src={relatedPost.image || "/placeholder.svg"}
+                          alt={relatedPost.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                      <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {relatedPost.title}
+                      </h4>
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{relatedPost.description}</p>
+                    </div>
+                  </Link>
+                ))}
+            </div>
           </div>
         </div>
-
-        <div className="mt-12 text-center">
-          <Link href="/blog" className="text-blue-600 hover:text-blue-800 font-medium">
-            ← Back to Blog
-          </Link>
-        </div>
-      </article>
+      </div>
+      <Footer />
     </div>
   )
+}
+
+export async function generateStaticParams() {
+  return Object.keys(blogPosts).map((slug) => ({
+    slug,
+  }))
 }

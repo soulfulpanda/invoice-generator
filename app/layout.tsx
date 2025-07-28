@@ -1,50 +1,38 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/sonner"
-
-const inter = Inter({ subsets: ["latin"] })
+import { Header } from "@/components/header"
 
 export const metadata: Metadata = {
-  title: "Free Invoice Generator - Create Professional Invoices Online",
+  title: "Invoice Generator - Generate Invoice For Free",
   description:
-    "Generate professional invoices for free. Easy-to-use online invoice generator with customizable templates, PDF export, and invoice management.",
-  keywords: "invoice generator, free invoice, online invoice, invoice template, PDF invoice, business invoice",
-  authors: [{ name: "Free Invoice Generator" }],
-  openGraph: {
-    title: "Free Invoice Generator - Create Professional Invoices Online",
-    description:
-      "Generate professional invoices for free. Easy-to-use online invoice generator with customizable templates, PDF export, and invoice management.",
-    type: "website",
-    locale: "en_US",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Free Invoice Generator - Create Professional Invoices Online",
-    description:
-      "Generate professional invoices for free. Easy-to-use online invoice generator with customizable templates, PDF export, and invoice management.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-    generator: 'v0.dev'
+    "Use our Free Invoice Generator Tool to quickly generate invoices with our clean invoice template right on the web at zero cost",
+  keywords:
+    "generate invoice, invoice generator, invoice generator tool, bill generator free, free invoice generator, create free invoice, free bill generator",
+  generator: "v0.dev",
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          {children}
-          <Toaster />
-        </ThemeProvider>
+    <html lang="en">
+      <head>
+        <style>{`
+html {
+  font-family: ${GeistSans.style.fontFamily};
+  --font-sans: ${GeistSans.variable};
+  --font-mono: ${GeistMono.variable};
+}
+        `}</style>
+      </head>
+      <body>
+        <Header />
+        {children}
       </body>
     </html>
   )
