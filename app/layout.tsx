@@ -1,12 +1,17 @@
-import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
-import './globals.css'
+import type React from "react"
+import type { Metadata } from "next"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
+import "./globals.css"
+import { Header } from "@/components/header"
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: "Invoice Generator - Generate Invoice For Free",
+  description:
+    "Use our Free Invoice Generator Tool to quickly generate invoices with our clean invoice template right on the web at zero cost",
+  keywords:
+    "generate invoice, invoice generator, invoice generator tool, bill generator free, free invoice generator, create free invoice, free bill generator",
+  generator: "v0.dev",
 }
 
 export default function RootLayout({
@@ -25,7 +30,10 @@ html {
 }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body>
+        <Header />
+        {children}
+      </body>
     </html>
   )
 }
