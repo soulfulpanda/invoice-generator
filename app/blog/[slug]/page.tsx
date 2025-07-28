@@ -1,51 +1,35 @@
+import { createClient } from "@/lib/supabase"
 import { notFound } from "next/navigation"
-import Image from "next/image"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Footer } from "@/components/footer"
-import fs from "fs"
-import path from "path"
 import type { Metadata } from "next"
+import ReactMarkdown from "react-markdown"
 
-const blogPosts = {
-  "receipt-vs-invoice": {
-    title: "Receipt vs Invoice: Understanding the Differences",
-    description:
-      "Learn the key differences between receipts and invoices, when to use each, and how they impact your business operations and tax obligations.",
-    image: "/Invoice vs Receipt.webp",
-    keywords: "receipt vs invoice, invoice receipt difference, business documents, accounting, tax records",
-  },
-  "invoice-payment-reminder": {
-    title: "Invoice Payment Reminder Tips: Get Paid Without Damaging Relationships",
-    description:
-      "Discover effective strategies for sending payment reminders that accelerate cash flow while maintaining positive client relationships.",
-    image: "/Invoice Payment Reminder.webp",
-    keywords: "invoice payment reminder, payment collection, cash flow, client relationships, overdue invoices",
-  },
-  "invoicing-guide-101": {
-    title: "Invoicing Guide 101: What You Need to Know",
-    description:
-      "Master the art of professional invoicing with this comprehensive guide covering legal requirements, best practices, and technology solutions.",
-    image: "/Invoicing Guide 101.webp",
-    keywords: "invoicing guide, professional invoicing, invoice best practices, business billing, invoice requirements",
-  },
-  "invoice-factoring": {
-    title: "Invoice Factoring for Noobs: Getting Paid Faster",
-    description:
-      "Learn how invoice factoring can transform your cash flow by converting unpaid invoices into immediate cash for business growth.",
-    image: "/Invoice Factoring.webp",
-    keywords: "invoice factoring, cash flow, business financing, accounts receivable, working capital",
-  },
+interface BlogPost {
+  id: string
+  title: string
+  slug: string
+  content: string
+  excerpt: string
+  featured_image: string
+  keywords: string
+  meta_description: string
+  created_at: string
+  updated_at: string
 }
 
-type Props = {
-  params: Promise<{ slug: string }>
+async function getBlogPost(slug: string): Promise<BlogPost | null> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase.from("blog_posts").select("*").eq("slug", slug).eq("published", true).single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return data
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
-  const post = blogPosts[slug as keyof typeof blogPosts]
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const post = await getBlogPost(params.slug)
 
   if (!post) {
     return {
@@ -54,106 +38,67 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${post.title} | Invoice Generator Blog`,
-    description: post.description,
+    title: post.title,
+    description: post.meta_description || post.excerpt,
     keywords: post.keywords,
     openGraph: {
       title: post.title,
-      description: post.description,
-      images: [post.image],
-      type: "article",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: post.title,
-      description: post.description,
-      images: [post.image],
+      description: post.meta_description || post.excerpt,
+      images: post.featured_image ? [post.featured_image] : [],
     },
   }
 }
 
-export default async function BlogPost({ params }: Props) {
-  const { slug } = await params
-  const post = blogPosts[slug as keyof typeof blogPosts]
+export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+  const post = await getBlogPost(params.slug)
 
   if (!post) {
     notFound()
   }
 
-  // Read the HTML file content exactly as written
-  let htmlContent = ""
-  try {
-    const filePath = path.join(process.cwd(), "public", `${slug}.html`)
-    htmlContent = fs.readFileSync(filePath, "utf8")
-  } catch (error) {
-    notFound()
-  }
-
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <div className="container mx-auto px-4 py-8 flex-1">
-        <div className="max-w-4xl mx-auto">
-          {/* Back button */}
-          <Link href="/blog" className="inline-flex items-center mb-8">
-            <Button variant="ghost" className="pl-0">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Blog
-            </Button>
-          </Link>
-
-          {/* Featured image - not cropped */}
-          <div className="relative w-full h-64 md:h-80 mb-8 rounded-lg overflow-hidden">
-            <Image
-              src={post.image || "/placeholder.svg"}
+    <div className="min-h-screen bg-white">
+      <article className="max-w-4xl mx-auto px-4 py-12">
+        {post.featured_image && (
+          <div className="aspect-video overflow-hidden rounded-lg mb-8">
+            <img
+              src={post.featured_image || "/placeholder.svg"}
               alt={post.title}
-              fill
-              className="object-contain bg-gray-100"
-              priority
+              className="w-full h-full object-cover"
             />
           </div>
+        )}
 
-          {/* Blog post title */}
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">{post.title}</h1>
-
-          {/* HTML content exactly as you wrote it - NO MODIFICATIONS */}
-          <article className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />
-
-          {/* Related posts */}
-          <div className="mt-16 pt-8 border-t">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Related Articles</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              {Object.entries(blogPosts)
-                .filter(([blogSlug]) => blogSlug !== slug)
-                .slice(0, 2)
-                .map(([blogSlug, relatedPost]) => (
-                  <Link key={blogSlug} href={`/blog/${blogSlug}`} className="group">
-                    <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="relative h-32 mb-3 rounded overflow-hidden">
-                        <Image
-                          src={relatedPost.image || "/placeholder.svg"}
-                          alt={relatedPost.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform"
-                        />
-                      </div>
-                      <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {relatedPost.title}
-                      </h4>
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{relatedPost.description}</p>
-                    </div>
-                  </Link>
-                ))}
-            </div>
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
+          <div className="flex items-center text-gray-600 text-sm">
+            <time dateTime={post.created_at}>
+              {new Date(post.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </time>
+            {post.updated_at !== post.created_at && (
+              <>
+                <span className="mx-2">•</span>
+                <span>
+                  Updated{" "}
+                  {new Date(post.updated_at).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </span>
+              </>
+            )}
           </div>
+        </header>
+
+        <div className="prose prose-lg max-w-none">
+          <ReactMarkdown>{post.content}</ReactMarkdown>
         </div>
-      </div>
-      <Footer />
+      </article>
     </div>
   )
-}
-
-export async function generateStaticParams() {
-  return Object.keys(blogPosts).map((slug) => ({
-    slug,
-  }))
 }

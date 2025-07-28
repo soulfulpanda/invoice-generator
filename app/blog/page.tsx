@@ -1,83 +1,101 @@
+import { createClient } from "@/lib/supabase"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import Image from "next/image"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Footer } from "@/components/footer"
+import type { Metadata } from "next"
 
-const blogPosts = [
-  {
-    slug: "receipt-vs-invoice",
-    title: "Receipt vs Invoice: Understanding the Differences",
-    description:
-      "Learn the key differences between receipts and invoices, when to use each, and how they impact your business operations and tax obligations.",
-    image: "/Invoice vs Receipt.webp",
-    readTime: "8 min read",
-  },
-  {
-    slug: "invoice-payment-reminder",
-    title: "Invoice Payment Reminder Tips: Get Paid Without Damaging Relationships",
-    description:
-      "Discover effective strategies for sending payment reminders that accelerate cash flow while maintaining positive client relationships.",
-    image: "/Invoice Payment Reminder.webp",
-    readTime: "12 min read",
-  },
-  {
-    slug: "invoicing-guide-101",
-    title: "Invoicing Guide 101: What You Need to Know",
-    description:
-      "Master the art of professional invoicing with this comprehensive guide covering legal requirements, best practices, and technology solutions.",
-    image: "/Invoicing Guide 101.webp",
-    readTime: "15 min read",
-  },
-  {
-    slug: "invoice-factoring",
-    title: "Invoice Factoring for Noobs: Getting Paid Faster",
-    description:
-      "Learn how invoice factoring can transform your cash flow by converting unpaid invoices into immediate cash for business growth.",
-    image: "/Invoice Factoring.webp",
-    readTime: "18 min read",
-  },
-]
+export const metadata: Metadata = {
+  title: "Blog - Invoice Generator",
+  description: "Read our latest articles about invoicing, business finance, and more.",
+}
 
-export default function BlogPage() {
+interface BlogPost {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  featured_image: string
+  keywords: string
+  created_at: string
+}
+
+async function getBlogPosts(): Promise<BlogPost[]> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select("id, title, slug, excerpt, featured_image, keywords, created_at")
+    .eq("published", true)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching blog posts:", error)
+    return []
+  }
+
+  return data || []
+}
+
+export default async function BlogPage() {
+  const posts = await getBlogPosts()
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="container mx-auto px-4 py-12 flex-1">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Invoice Generator Blog</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Expert insights on invoicing, payment collection, and business finance to help you get paid faster and grow
-            your business.
-          </p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Blog</h1>
+          <p className="text-xl text-gray-600">Insights on invoicing, business finance, and entrepreneurship</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {blogPosts.map((post) => (
-            <Card key={post.slug} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="relative h-48">
-                <Image src={post.image || "/placeholder.svg"} alt={post.title} fill className="object-contain" />
-              </div>
-              <CardHeader>
-                <Link href={`/blog/${post.slug}`}>
-                  <h2 className="text-xl font-semibold text-gray-900 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
-                    {post.title}
-                  </h2>
-                </Link>
-                <p className="text-sm text-gray-500">{post.readTime}</p>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-4 line-clamp-3">{post.description}</p>
-                <Link href={`/blog/${post.slug}`}>
-                  <Button variant="outline" className="w-full bg-transparent">
-                    Read More
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {posts.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No blog posts available yet.</p>
+          </div>
+        ) : (
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {posts.map((post) => (
+              <Link key={post.id} href={`/blog/${post.slug}`}>
+                <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                  {post.featured_image && (
+                    <div className="aspect-video overflow-hidden rounded-t-lg">
+                      <img
+                        src={post.featured_image || "/placeholder.svg"}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <CardHeader>
+                    <CardTitle className="text-xl line-clamp-2">{post.title}</CardTitle>
+                    <p className="text-sm text-gray-500">
+                      {new Date(post.created_at).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    {post.excerpt && <p className="text-gray-600 line-clamp-3 mb-4">{post.excerpt}</p>}
+                    {post.keywords && (
+                      <div className="flex flex-wrap gap-1">
+                        {post.keywords
+                          .split(",")
+                          .slice(0, 3)
+                          .map((keyword, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {keyword.trim()}
+                            </Badge>
+                          ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
-      <Footer />
     </div>
   )
 }
