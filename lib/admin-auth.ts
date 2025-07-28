@@ -1,45 +1,16 @@
-export const ADMIN_CREDENTIALS = {
-  username: "Seunish",
-  password: "YTREWQ$321",
-}
+import bcrypt from "bcryptjs"
 
-export interface AdminUser {
-  username: string
-}
+const ADMIN_USERNAME = "Seunish"
+const ADMIN_PASSWORD_HASH = "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi" // YTREWQ$321
 
-export function validateAdminCredentials(username: string, password: string): boolean {
-  return username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password
-}
-
-export async function authenticateAdmin(username: string, password: string): Promise<AdminUser | null> {
-  // Development fallback - always allow these credentials
-  if (validateAdminCredentials(username, password)) {
-    return { username: "Seunish" }
+export async function verifyAdmin(username: string, password: string): Promise<boolean> {
+  if (username !== ADMIN_USERNAME) {
+    return false
   }
 
-  // In production, you would check against the database
-  // For now, we'll just use the fallback
-  return null
+  return await bcrypt.compare(password, ADMIN_PASSWORD_HASH)
 }
 
-export function getAdminSession(): AdminUser | null {
-  if (typeof window === "undefined") return null
-
-  const session = sessionStorage.getItem("admin_auth")
-  if (session) {
-    return JSON.parse(session)
-  }
-  return null
-}
-
-export function setAdminSession(user: AdminUser): void {
-  if (typeof window === "undefined") return
-
-  sessionStorage.setItem("admin_auth", JSON.stringify(user))
-}
-
-export function clearAdminSession(): void {
-  if (typeof window === "undefined") return
-
-  sessionStorage.removeItem("admin_auth")
+export function generateSessionToken(): string {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36)
 }

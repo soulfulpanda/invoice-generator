@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -12,40 +12,24 @@ export const metadata: Metadata = {
   description:
     "Generate professional invoices for free. Easy-to-use online invoice generator with customizable templates, PDF export, and invoice management.",
   keywords: "invoice generator, free invoice, online invoice, invoice template, PDF invoice, business invoice",
-  authors: [{ name: "Invoice Generator Team" }],
-  creator: "Invoice Generator",
-  publisher: "Invoice Generator",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  metadataBase: new URL("https://your-domain.com"),
+  authors: [{ name: "Free Invoice Generator" }],
+  creator: "Free Invoice Generator",
+  publisher: "Free Invoice Generator",
+  robots: "index, follow",
   openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://your-domain.com",
     title: "Free Invoice Generator - Create Professional Invoices Online",
     description:
-      "Generate professional invoices for free. Easy-to-use online invoice generator with customizable templates, PDF export, and invoice management.",
-    url: "https://your-domain.com",
+      "Generate professional invoices for free. Easy-to-use online invoice generator with customizable templates.",
     siteName: "Free Invoice Generator",
-    locale: "en_US",
-    type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Free Invoice Generator - Create Professional Invoices Online",
     description:
-      "Generate professional invoices for free. Easy-to-use online invoice generator with customizable templates, PDF export, and invoice management.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
+      "Generate professional invoices for free. Easy-to-use online invoice generator with customizable templates.",
   },
     generator: 'v0.dev'
 }

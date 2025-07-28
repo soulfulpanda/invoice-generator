@@ -13,9 +13,7 @@ Crawl-delay: 1
 User-agent: Googlebot
 Allow: /
 Disallow: /admin-dash
-Disallow: /api/
 
 User-agent: Bingbot
 Allow: /
 Disallow: /admin-dash
-Disallow: /api/

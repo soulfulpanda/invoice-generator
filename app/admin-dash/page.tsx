@@ -1,33 +1,45 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BlogPostEditor } from "@/components/blog-post-editor"
 import { BlogPostList } from "@/components/blog-post-list"
-import { toast } from "@/hooks/use-toast"
+
+interface BlogPost {
+  id: number
+  title: string
+  slug: string
+  excerpt: string
+  content: string
+  published: boolean
+  created_at: string
+  updated_at: string
+  meta_title: string
+  meta_description: string
+}
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [editingPost, setEditingPost] = useState(null)
+  const [loginError, setLoginError] = useState("")
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null)
+  const [showEditor, setShowEditor] = useState(false)
 
   useEffect(() => {
-    const auth = sessionStorage.getItem("admin_auth")
-    if (auth) {
-      setIsAuthenticated(true)
+    if (isAuthenticated) {
+      fetchPosts()
     }
-  }, [])
+  }, [isAuthenticated])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
+    setLoginError("")
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -36,27 +48,46 @@ export default function AdminDashboard() {
         body: JSON.stringify({ username, password }),
       })
 
-      const data = await response.json()
-
-      if (data.success) {
-        sessionStorage.setItem("admin_auth", "true")
+      if (response.ok) {
         setIsAuthenticated(true)
-        toast({ title: "Login successful", description: "Welcome to the admin dashboard" })
       } else {
-        toast({ title: "Login failed", description: data.error, variant: "destructive" })
+        setLoginError("Invalid credentials")
       }
     } catch (error) {
-      toast({ title: "Login failed", description: "Network error", variant: "destructive" })
-    } finally {
-      setIsLoading(false)
+      setLoginError("Login failed")
     }
   }
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin_auth")
-    setIsAuthenticated(false)
-    setUsername("")
-    setPassword("")
+  const fetchPosts = async () => {
+    try {
+      const response = await fetch("/api/blog-posts")
+      const data = await response.json()
+      setPosts(data)
+    } catch (error) {
+      console.error("Failed to fetch posts:", error)
+    }
+  }
+
+  const handlePostSaved = () => {
+    fetchPosts()
+    setShowEditor(false)
+    setEditingPost(null)
+  }
+
+  const handleEditPost = (post: BlogPost) => {
+    setEditingPost(post)
+    setShowEditor(true)
+  }
+
+  const handleDeletePost = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this post?")) return
+
+    try {
+      await fetch(`/api/blog-posts?id=${id}`, { method: "DELETE" })
+      fetchPosts()
+    } catch (error) {
+      console.error("Failed to delete post:", error)
+    }
   }
 
   if (!isAuthenticated) {
@@ -64,32 +95,27 @@ export default function AdminDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-center">Admin Login</CardTitle>
+            <CardTitle>Admin Login</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+              <Input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              {loginError && <p className="text-red-500 text-sm">{loginError}</p>}
+              <Button type="submit" className="w-full">
+                Login
               </Button>
             </form>
           </CardContent>
@@ -99,31 +125,25 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <Button onClick={handleLogout} variant="outline">
-            Logout
-          </Button>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Blog Admin Dashboard</h1>
+          <Button onClick={() => setShowEditor(true)}>Create New Post</Button>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="posts" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="posts">Manage Posts</TabsTrigger>
-            <TabsTrigger value="new">New Post</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="posts">
-            <BlogPostList onEdit={setEditingPost} />
-          </TabsContent>
-
-          <TabsContent value="new">
-            <BlogPostEditor post={editingPost} onSave={() => setEditingPost(null)} />
-          </TabsContent>
-        </Tabs>
+        {showEditor ? (
+          <BlogPostEditor
+            post={editingPost}
+            onSave={handlePostSaved}
+            onCancel={() => {
+              setShowEditor(false)
+              setEditingPost(null)
+            }}
+          />
+        ) : (
+          <BlogPostList posts={posts} onEdit={handleEditPost} onDelete={handleDeletePost} />
+        )}
       </div>
     </div>
   )
