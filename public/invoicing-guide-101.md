@@ -2,7 +2,7 @@
 
 Running a successful business means getting paid on time, every time. Whether you're a freelancer just starting out or a small business owner looking to streamline your billing process, mastering the art of invoicing is crucial for maintaining healthy cash flow and professional relationships.
 
-In this comprehensive guide, we'll walk you through everything you need to know about creating professional invoices that get results. From understanding the legal requirements to implementing best practices that accelerate payments, you'll have all the tools needed to transform your invoicing process.
+In this guide, we'll walk you through everything you need to know about creating professional invoices that get results. From understanding the legal requirements to implementing best practices that accelerate payments, you'll have all the tools needed to transform your invoicing process.
 
 ## What is an Invoice? Understanding the Basics
 
