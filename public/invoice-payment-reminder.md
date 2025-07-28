@@ -1,4 +1,4 @@
-# The Ultimate Invoice Payment Reminder Guide: Get Paid Faster Without Damaging Relationships
+# Invoice Payment Reminder Tips: Get Paid Without Damaging Relationships
 
 Late payments are the silent killer of small business cash flow. Studies show that the average invoice takes 26 days to get paid, with many stretching far beyond their due dates. But here's the thing: most late payments aren't malicious—they're simply forgotten or lost in the shuffle of busy business operations.
 
