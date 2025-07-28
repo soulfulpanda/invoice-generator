@@ -86,7 +86,7 @@ export function InvoicePreview({ invoice, onBack, user }: InvoicePreviewProps) {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 print:hidden">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex flex-wrap justify-between items-center gap-4 py-4">
             <Button variant="outline" onClick={onBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Edit
