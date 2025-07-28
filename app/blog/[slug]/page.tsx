@@ -80,7 +80,7 @@ export default async function BlogPost({ params }: Props) {
     notFound()
   }
 
-  // Read the HTML file
+  // Read the HTML file content exactly as written
   let htmlContent = ""
   try {
     const filePath = path.join(process.cwd(), "public", `${slug}.html`)
@@ -90,26 +90,62 @@ export default async function BlogPost({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <div className="container mx-auto px-4 py-8 flex-1">
-        <Link href="/blog">
-          <Button variant="ghost" className="mb-6">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Blog
-          </Button>
-        </Link>
+        <div className="max-w-4xl mx-auto">
+          {/* Back button */}
+          <Link href="/blog" className="inline-flex items-center mb-8">
+            <Button variant="ghost" className="pl-0">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Blog
+            </Button>
+          </Link>
 
-        <article className="max-w-4xl mx-auto">
-          {/* Featured Image */}
-          <div className="relative h-64 md:h-96 mb-8 rounded-lg overflow-hidden">
-            <Image src={post.image || "/placeholder.svg"} alt={post.title} fill className="object-contain bg-white" />
+          {/* Featured image - not cropped */}
+          <div className="relative w-full h-64 md:h-80 mb-8 rounded-lg overflow-hidden">
+            <Image
+              src={post.image || "/placeholder.svg"}
+              alt={post.title}
+              fill
+              className="object-contain bg-gray-100"
+              priority
+            />
           </div>
 
-          {/* Blog Content */}
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+          {/* Blog post title */}
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">{post.title}</h1>
+
+          {/* HTML content exactly as you wrote it - NO MODIFICATIONS */}
+          <article className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />
+
+          {/* Related posts */}
+          <div className="mt-16 pt-8 border-t">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Related Articles</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              {Object.entries(blogPosts)
+                .filter(([blogSlug]) => blogSlug !== slug)
+                .slice(0, 2)
+                .map(([blogSlug, relatedPost]) => (
+                  <Link key={blogSlug} href={`/blog/${blogSlug}`} className="group">
+                    <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="relative h-32 mb-3 rounded overflow-hidden">
+                        <Image
+                          src={relatedPost.image || "/placeholder.svg"}
+                          alt={relatedPost.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                      <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {relatedPost.title}
+                      </h4>
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{relatedPost.description}</p>
+                    </div>
+                  </Link>
+                ))}
+            </div>
           </div>
-        </article>
+        </div>
       </div>
       <Footer />
     </div>
