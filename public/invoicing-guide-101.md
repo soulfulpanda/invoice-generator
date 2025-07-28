@@ -1,4 +1,4 @@
-# The Complete Invoicing Guide 101: Master Professional Invoicing in 2025
+# Invoicing Guide 101: What You Need to Know
 
 Running a successful business means getting paid on time, every time. Whether you're a freelancer just starting out or a small business owner looking to streamline your billing process, mastering the art of invoicing is crucial for maintaining healthy cash flow and professional relationships.
 
