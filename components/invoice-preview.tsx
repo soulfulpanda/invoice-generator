@@ -41,7 +41,7 @@ export function InvoicePreview({ invoice, onBack, user }: InvoicePreviewProps) {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Edit
             </Button>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={handlePrint}>
                 <Printer className="h-4 w-4 mr-2" />
                 Print
