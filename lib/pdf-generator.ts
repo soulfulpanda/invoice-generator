@@ -7,273 +7,217 @@ const currencies = [
   { code: "CAD", symbol: "C$" },
   { code: "AUD", symbol: "A$" },
   { code: "JPY", symbol: "¥" },
+  { code: "CHF", symbol: "CHF" },
+  { code: "CNY", symbol: "¥" },
+  { code: "INR", symbol: "₹" },
+  { code: "KRW", symbol: "₩" },
+  { code: "SGD", symbol: "S$" },
+  { code: "HKD", symbol: "HK$" },
+  { code: "NOK", symbol: "kr" },
+  { code: "SEK", symbol: "kr" },
+  { code: "DKK", symbol: "kr" },
+  { code: "PLN", symbol: "zł" },
+  { code: "CZK", symbol: "Kč" },
+  { code: "HUF", symbol: "Ft" },
+  { code: "RUB", symbol: "₽" },
+  { code: "BRL", symbol: "R$" },
+  { code: "MXN", symbol: "$" },
+  { code: "ZAR", symbol: "R" },
+  { code: "TRY", symbol: "₺" },
+  { code: "ILS", symbol: "₪" },
+  { code: "AED", symbol: "د.إ" },
+  { code: "SAR", symbol: "﷼" },
+  { code: "EGP", symbol: "£" },
+  { code: "THB", symbol: "฿" },
+  { code: "MYR", symbol: "RM" },
+  { code: "IDR", symbol: "Rp" },
+  { code: "PHP", symbol: "₱" },
+  { code: "VND", symbol: "₫" },
+  { code: "NZD", symbol: "NZ$" },
 ]
 
-export function generatePDF(invoice: Invoice) {
-  // Create a new window for printing
-  const printWindow = window.open("", "_blank")
-  if (!printWindow) return
+export async function generatePDF(invoice: Invoice, design = "minimal") {
+  // Dynamic import to avoid SSR issues
+  const { jsPDF } = await import("jspdf")
 
   const currency = currencies.find((c) => c.code === invoice.currency)
+  const doc = new jsPDF()
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Invoice ${invoice.invoiceNumber}</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          margin: 0;
-          padding: 20px;
-          color: #333;
-        }
-        .invoice-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 40px;
-        }
-        .logo {
-          max-height: 80px;
-          margin-bottom: 20px;
-        }
-        .invoice-title {
-          font-size: 36px;
-          font-weight: bold;
-          margin: 0;
-        }
-        .invoice-number {
-          color: #666;
-          margin: 5px 0;
-        }
-        .invoice-dates {
-          text-align: right;
-          font-size: 14px;
-        }
-        .contact-section {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 40px;
-        }
-        .contact-box {
-          width: 45%;
-        }
-        .contact-title {
-          font-size: 12px;
-          font-weight: bold;
-          color: #666;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          margin-bottom: 10px;
-        }
-        .contact-name {
-          font-weight: bold;
-          margin-bottom: 5px;
-        }
-        .items-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 30px;
-        }
-        .items-table th {
-          background-color: #f8f9fa;
-          padding: 12px;
-          text-align: left;
-          font-weight: bold;
-          border-bottom: 2px solid #dee2e6;
-        }
-        .items-table td {
-          padding: 12px;
-          border-bottom: 1px solid #dee2e6;
-        }
-        .items-table th:last-child,
-        .items-table td:last-child {
-          text-align: right;
-        }
-        .totals-section {
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: 40px;
-        }
-        .totals-box {
-          width: 300px;
-        }
-        .total-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 8px 0;
-        }
-        .total-row.final {
-          border-top: 2px solid #333;
-          font-weight: bold;
-          font-size: 18px;
-          margin-top: 10px;
-          padding-top: 10px;
-        }
-        .notes-section {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 40px;
-        }
-        .notes-box {
-          width: 45%;
-        }
-        .notes-title {
-          font-size: 12px;
-          font-weight: bold;
-          color: #666;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          margin-bottom: 10px;
-        }
-        .notes-content {
-          white-space: pre-line;
-          line-height: 1.5;
-        }
-        @media print {
-          body { margin: 0; padding: 15px; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="invoice-header">
-        <div>
-          ${invoice.logo ? `<img src="${invoice.logo}" alt="Logo" class="logo">` : ""}
-          <h1 class="invoice-title">INVOICE</h1>
-          <p class="invoice-number">#${invoice.invoiceNumber}</p>
-        </div>
-        <div class="invoice-dates">
-          <p><strong>Date:</strong> ${new Date(invoice.date).toLocaleDateString()}</p>
-          ${invoice.dueDate ? `<p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>` : ""}
-        </div>
-      </div>
-
-      <div class="contact-section">
-        <div class="contact-box">
-          <div class="contact-title">From</div>
-          <div class="contact-name">${invoice.sender.name}</div>
-          ${invoice.sender.email ? `<div>${invoice.sender.email}</div>` : ""}
-          ${invoice.sender.phone ? `<div>${invoice.sender.phone}</div>` : ""}
-          ${invoice.sender.address ? `<div class="notes-content">${invoice.sender.address}</div>` : ""}
-        </div>
-        <div class="contact-box">
-          <div class="contact-title">To</div>
-          <div class="contact-name">${invoice.recipient.name}</div>
-          ${invoice.recipient.email ? `<div>${invoice.recipient.email}</div>` : ""}
-          ${invoice.recipient.phone ? `<div>${invoice.recipient.phone}</div>` : ""}
-          ${invoice.recipient.address ? `<div class="notes-content">${invoice.recipient.address}</div>` : ""}
-        </div>
-      </div>
-
-      <table class="items-table">
-        <thead>
-          <tr>
-            <th>Description</th>
-            <th style="text-align: right;">Qty</th>
-            <th style="text-align: right;">Rate</th>
-            <th style="text-align: right;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${invoice.items
-            .map(
-              (item) => `
-            <tr>
-              <td>${item.description}</td>
-              <td style="text-align: right;">${item.quantity}</td>
-              <td style="text-align: right;">${currency?.symbol}${item.rate.toFixed(2)}</td>
-              <td style="text-align: right;">${currency?.symbol}${item.amount.toFixed(2)}</td>
-            </tr>
-          `,
-            )
-            .join("")}
-        </tbody>
-      </table>
-
-      <div class="totals-section">
-        <div class="totals-box">
-          <div class="total-row">
-            <span>Subtotal:</span>
-            <span>${currency?.symbol}${invoice.subtotal.toFixed(2)}</span>
-          </div>
-          ${
-            invoice.taxAmount > 0
-              ? `
-            <div class="total-row">
-              <span>Tax (${invoice.taxRate}%):</span>
-              <span>${currency?.symbol}${invoice.taxAmount.toFixed(2)}</span>
-            </div>
-          `
-              : ""
-          }
-          ${
-            invoice.discountAmount > 0
-              ? `
-            <div class="total-row">
-              <span>Discount (${invoice.discountRate}%):</span>
-              <span>-${currency?.symbol}${invoice.discountAmount.toFixed(2)}</span>
-            </div>
-          `
-              : ""
-          }
-          ${
-            invoice.shipping > 0
-              ? `
-            <div class="total-row">
-              <span>Shipping:</span>
-              <span>${currency?.symbol}${invoice.shipping.toFixed(2)}</span>
-            </div>
-          `
-              : ""
-          }
-          <div class="total-row final">
-            <span>Total:</span>
-            <span>${currency?.symbol}${invoice.total.toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
-
-      ${
-        invoice.notes || invoice.terms
-          ? `
-        <div class="notes-section">
-          ${
-            invoice.notes
-              ? `
-            <div class="notes-box">
-              <div class="notes-title">Notes</div>
-              <div class="notes-content">${invoice.notes}</div>
-            </div>
-          `
-              : ""
-          }
-          ${
-            invoice.terms
-              ? `
-            <div class="notes-box">
-              <div class="notes-title">Terms & Conditions</div>
-              <div class="notes-content">${invoice.terms}</div>
-            </div>
-          `
-              : ""
-          }
-        </div>
-      `
-          : ""
-      }
-    </body>
-    </html>
-  `
-
-  printWindow.document.write(htmlContent)
-  printWindow.document.close()
-
-  // Wait for content to load, then print and close
-  printWindow.onload = () => {
-    setTimeout(() => {
-      printWindow.print()
-      printWindow.close()
-    }, 250)
+  // Set colors based on design
+  const colors = {
+    minimal: { primary: "#000000", secondary: "#666666", accent: "#f8f9fa" },
+    modern: { primary: "#2563eb", secondary: "#64748b", accent: "#eff6ff" },
+    elegant: { primary: "#7c3aed", secondary: "#6b7280", accent: "#f3f4f6" },
+    vibrant: { primary: "#dc2626", secondary: "#374151", accent: "#fef2f2" },
   }
+
+  const theme = colors[design as keyof typeof colors] || colors.minimal
+
+  // Set font
+  doc.setFont("helvetica")
+
+  // Header
+  doc.setFontSize(28)
+  doc.setTextColor(theme.primary)
+  doc.text("INVOICE", 20, 30)
+
+  doc.setFontSize(12)
+  doc.setTextColor(theme.secondary)
+  doc.text(`#${invoice.invoiceNumber}`, 20, 40)
+
+  // Date info
+  doc.setFontSize(10)
+  doc.text(`Date: ${new Date(invoice.date).toLocaleDateString()}`, 150, 30)
+  if (invoice.dueDate) {
+    doc.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`, 150, 37)
+  }
+
+  // From/To sections
+  let yPos = 60
+
+  doc.setFontSize(10)
+  doc.setTextColor(theme.secondary)
+  doc.text("FROM", 20, yPos)
+  doc.text("TO", 110, yPos)
+
+  yPos += 8
+  doc.setFontSize(11)
+  doc.setTextColor(theme.primary)
+  doc.text(invoice.sender.name, 20, yPos)
+  doc.text(invoice.recipient.name, 110, yPos)
+
+  yPos += 6
+  doc.setFontSize(9)
+  doc.setTextColor(theme.secondary)
+  if (invoice.sender.email) {
+    doc.text(invoice.sender.email, 20, yPos)
+    yPos += 4
+  }
+  if (invoice.sender.phone) {
+    doc.text(invoice.sender.phone, 20, yPos)
+    yPos += 4
+  }
+  if (invoice.sender.address) {
+    const addressLines = invoice.sender.address.split("\n")
+    addressLines.forEach((line) => {
+      doc.text(line, 20, yPos)
+      yPos += 4
+    })
+  }
+
+  // Reset yPos for recipient
+  yPos = 74
+  if (invoice.recipient.email) {
+    doc.text(invoice.recipient.email, 110, yPos)
+    yPos += 4
+  }
+  if (invoice.recipient.phone) {
+    doc.text(invoice.recipient.phone, 110, yPos)
+    yPos += 4
+  }
+  if (invoice.recipient.address) {
+    const addressLines = invoice.recipient.address.split("\n")
+    addressLines.forEach((line) => {
+      doc.text(line, 110, yPos)
+      yPos += 4
+    })
+  }
+
+  // Items table
+  yPos = 120
+
+  // Table header
+  doc.setFillColor(theme.accent)
+  doc.rect(20, yPos - 5, 170, 8, "F")
+
+  doc.setFontSize(10)
+  doc.setTextColor(theme.primary)
+  doc.text("Description", 22, yPos)
+  doc.text("Qty", 130, yPos)
+  doc.text("Rate", 150, yPos)
+  doc.text("Amount", 175, yPos)
+
+  yPos += 10
+
+  // Table rows
+  doc.setFontSize(9)
+  invoice.items.forEach((item) => {
+    doc.setTextColor(theme.secondary)
+    doc.text(item.description, 22, yPos)
+    doc.text(item.quantity.toString(), 130, yPos)
+    doc.text(`${currency?.symbol}${item.rate.toFixed(2)}`, 150, yPos)
+    doc.text(`${currency?.symbol}${item.amount.toFixed(2)}`, 175, yPos)
+    yPos += 6
+  })
+
+  // Totals
+  yPos += 10
+  const totalsX = 130
+
+  doc.setFontSize(10)
+  doc.setTextColor(theme.secondary)
+  doc.text("Subtotal:", totalsX, yPos)
+  doc.text(`${currency?.symbol}${invoice.subtotal.toFixed(2)}`, 175, yPos)
+  yPos += 6
+
+  if (invoice.taxAmount > 0) {
+    doc.text(`Tax (${invoice.taxRate}%):`, totalsX, yPos)
+    doc.text(`${currency?.symbol}${invoice.taxAmount.toFixed(2)}`, 175, yPos)
+    yPos += 6
+  }
+
+  if (invoice.discountAmount > 0) {
+    doc.text(`Discount (${invoice.discountRate}%):`, totalsX, yPos)
+    doc.text(`-${currency?.symbol}${invoice.discountAmount.toFixed(2)}`, 175, yPos)
+    yPos += 6
+  }
+
+  if (invoice.shipping > 0) {
+    doc.text("Shipping:", totalsX, yPos)
+    doc.text(`${currency?.symbol}${invoice.shipping.toFixed(2)}`, 175, yPos)
+    yPos += 6
+  }
+
+  // Total line
+  doc.setLineWidth(0.5)
+  doc.setDrawColor(theme.primary)
+  doc.line(totalsX, yPos, 185, yPos)
+  yPos += 8
+
+  doc.setFontSize(12)
+  doc.setTextColor(theme.primary)
+  doc.text("Total:", totalsX, yPos)
+  doc.text(`${currency?.symbol}${invoice.total.toFixed(2)}`, 175, yPos)
+
+  // Notes and Terms
+  yPos += 20
+  if (invoice.notes) {
+    doc.setFontSize(10)
+    doc.setTextColor(theme.secondary)
+    doc.text("NOTES", 20, yPos)
+    yPos += 6
+    doc.setFontSize(9)
+    const noteLines = invoice.notes.split("\n")
+    noteLines.forEach((line) => {
+      doc.text(line, 20, yPos)
+      yPos += 4
+    })
+  }
+
+  if (invoice.terms) {
+    yPos += 10
+    doc.setFontSize(10)
+    doc.setTextColor(theme.secondary)
+    doc.text("TERMS & CONDITIONS", 20, yPos)
+    yPos += 6
+    doc.setFontSize(9)
+    const termLines = invoice.terms.split("\n")
+    termLines.forEach((line) => {
+      doc.text(line, 20, yPos)
+      yPos += 4
+    })
+  }
+
+  // Save the PDF
+  doc.save(`invoice-${invoice.invoiceNumber}.pdf`)
 }
