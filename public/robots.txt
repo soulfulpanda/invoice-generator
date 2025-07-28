@@ -1,5 +1,21 @@
 User-agent: *
 Allow: /
-
-# Disallow admin dashboard
 Disallow: /admin-dash
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://your-domain.com/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1
+
+# Specific rules for search engines
+User-agent: Googlebot
+Allow: /
+Disallow: /admin-dash
+Disallow: /api/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin-dash
+Disallow: /api/

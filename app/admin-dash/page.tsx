@@ -1,37 +1,28 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  authenticateAdmin,
-  getAdminSession,
-  setAdminSession,
-  clearAdminSession,
-  type AdminUser,
-} from "@/lib/admin-auth"
 import { BlogPostEditor } from "@/components/blog-post-editor"
 import { BlogPostList } from "@/components/blog-post-list"
 import { toast } from "@/hooks/use-toast"
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [loginForm, setLoginForm] = useState({ username: "", password: "" })
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [editingPost, setEditingPost] = useState(null)
 
   useEffect(() => {
-    const session = getAdminSession()
-    if (session) {
-      setAdminUser(session)
+    const auth = sessionStorage.getItem("admin_auth")
+    if (auth) {
       setIsAuthenticated(true)
     }
-    setIsLoading(false)
   }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -39,49 +30,33 @@ export default function AdminDashboard() {
     setIsLoading(true)
 
     try {
-      const user = await authenticateAdmin(loginForm.username, loginForm.password)
-      if (user) {
-        setAdminUser(user)
-        setAdminSession(user)
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        sessionStorage.setItem("admin_auth", "true")
         setIsAuthenticated(true)
-        toast({
-          title: "Login successful",
-          description: "Welcome to the admin dashboard",
-        })
+        toast({ title: "Login successful", description: "Welcome to the admin dashboard" })
       } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid username or password",
-          variant: "destructive",
-        })
+        toast({ title: "Login failed", description: data.error, variant: "destructive" })
       }
     } catch (error) {
-      toast({
-        title: "Login error",
-        description: "An error occurred during login",
-        variant: "destructive",
-      })
+      toast({ title: "Login failed", description: "Network error", variant: "destructive" })
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleLogout = () => {
-    clearAdminSession()
-    setAdminUser(null)
+    sessionStorage.removeItem("admin_auth")
     setIsAuthenticated(false)
-    setLoginForm({ username: "", password: "" })
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2">Loading...</p>
-        </div>
-      </div>
-    )
+    setUsername("")
+    setPassword("")
   }
 
   if (!isAuthenticated) {
@@ -98,8 +73,8 @@ export default function AdminDashboard() {
                 <Input
                   id="username"
                   type="text"
-                  value={loginForm.username}
-                  onChange={(e) => setLoginForm((prev) => ({ ...prev, username: e.target.value }))}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                 />
               </div>
@@ -108,8 +83,8 @@ export default function AdminDashboard() {
                 <Input
                   id="password"
                   type="password"
-                  value={loginForm.password}
-                  onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
@@ -125,33 +100,28 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {adminUser?.username}</span>
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                Logout
-              </Button>
-            </div>
-          </div>
+      <div className="border-b bg-white">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+          <Button onClick={handleLogout} variant="outline">
+            Logout
+          </Button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="posts" className="space-y-6">
           <TabsList>
             <TabsTrigger value="posts">Manage Posts</TabsTrigger>
-            <TabsTrigger value="new-post">New Post</TabsTrigger>
+            <TabsTrigger value="new">New Post</TabsTrigger>
           </TabsList>
 
           <TabsContent value="posts">
-            <BlogPostList />
+            <BlogPostList onEdit={setEditingPost} />
           </TabsContent>
 
-          <TabsContent value="new-post">
-            <BlogPostEditor />
+          <TabsContent value="new">
+            <BlogPostEditor post={editingPost} onSave={() => setEditingPost(null)} />
           </TabsContent>
         </Tabs>
       </div>

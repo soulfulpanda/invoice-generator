@@ -1,47 +1,45 @@
-import bcrypt from "bcryptjs"
-import { createClient } from "@/lib/supabase"
+export const ADMIN_CREDENTIALS = {
+  username: "Seunish",
+  password: "YTREWQ$321",
+}
 
 export interface AdminUser {
-  id: string
   username: string
 }
 
-export async function authenticateAdmin(username: string, password: string): Promise<AdminUser | null> {
-  const supabase = createClient()
-
-  const { data: user, error } = await supabase.from("admin_users").select("*").eq("username", username).single()
-
-  if (error || !user) {
-    return null
-  }
-
-  const isValid = await bcrypt.compare(password, user.password_hash)
-  if (!isValid) {
-    return null
-  }
-
-  return {
-    id: user.id,
-    username: user.username,
-  }
+export function validateAdminCredentials(username: string, password: string): boolean {
+  return username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password
 }
 
-export function setAdminSession(user: AdminUser) {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem("admin_user", JSON.stringify(user))
+export async function authenticateAdmin(username: string, password: string): Promise<AdminUser | null> {
+  // Development fallback - always allow these credentials
+  if (validateAdminCredentials(username, password)) {
+    return { username: "Seunish" }
   }
+
+  // In production, you would check against the database
+  // For now, we'll just use the fallback
+  return null
 }
 
 export function getAdminSession(): AdminUser | null {
-  if (typeof window !== "undefined") {
-    const stored = sessionStorage.getItem("admin_user")
-    return stored ? JSON.parse(stored) : null
+  if (typeof window === "undefined") return null
+
+  const session = sessionStorage.getItem("admin_auth")
+  if (session) {
+    return JSON.parse(session)
   }
   return null
 }
 
-export function clearAdminSession() {
-  if (typeof window !== "undefined") {
-    sessionStorage.removeItem("admin_user")
-  }
+export function setAdminSession(user: AdminUser): void {
+  if (typeof window === "undefined") return
+
+  sessionStorage.setItem("admin_auth", JSON.stringify(user))
+}
+
+export function clearAdminSession(): void {
+  if (typeof window === "undefined") return
+
+  sessionStorage.removeItem("admin_auth")
 }

@@ -1,19 +1,16 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useRef } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import { createClient } from "@/lib/supabase"
 import { toast } from "@/hooks/use-toast"
 
 interface BlogPost {
-  id?: string
+  id?: number
   title: string
   slug: string
   content: string
@@ -25,25 +22,39 @@ interface BlogPost {
 }
 
 interface BlogPostEditorProps {
-  post?: BlogPost
+  post?: BlogPost | null
   onSave?: () => void
 }
 
 export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
   const [formData, setFormData] = useState<BlogPost>({
-    title: post?.title || "",
-    slug: post?.slug || "",
-    content: post?.content || "",
-    excerpt: post?.excerpt || "",
-    featured_image: post?.featured_image || "",
-    keywords: post?.keywords || "",
-    meta_description: post?.meta_description || "",
-    published: post?.published || false,
+    title: "",
+    slug: "",
+    content: "",
+    excerpt: "",
+    featured_image: "",
+    keywords: "",
+    meta_description: "",
+    published: false,
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [imageUploading, setImageUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const contentRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (post) {
+      setFormData(post)
+    } else {
+      setFormData({
+        title: "",
+        slug: "",
+        content: "",
+        excerpt: "",
+        featured_image: "",
+        keywords: "",
+        meta_description: "",
+        published: false,
+      })
+    }
+  }, [post])
 
   const generateSlug = (title: string) => {
     return title
@@ -62,68 +73,10 @@ export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
     }))
   }
 
-  const insertFormatting = (before: string, after = "") => {
-    const textarea = contentRef.current
-    if (!textarea) return
-
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const selectedText = textarea.value.substring(start, end)
-    const newText = before + selectedText + after
-
-    const newContent = textarea.value.substring(0, start) + newText + textarea.value.substring(end)
-
-    setFormData((prev) => ({ ...prev, content: newContent }))
-
-    // Set cursor position
-    setTimeout(() => {
-      textarea.focus()
-      textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length)
-    }, 0)
-  }
-
-  const handleImageUpload = async (file: File) => {
-    setImageUploading(true)
-    try {
-      const supabase = createClient()
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${Date.now()}.${fileExt}`
-
-      const { data, error } = await supabase.storage.from("blog-images").upload(fileName, file)
-
-      if (error) throw error
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("blog-images").getPublicUrl(fileName)
-
-      return publicUrl
-    } catch (error) {
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload image",
-        variant: "destructive",
-      })
-      return null
-    } finally {
-      setImageUploading(false)
-    }
-  }
-
-  const handleFeaturedImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const url = await handleImageUpload(file)
-    if (url) {
-      setFormData((prev) => ({ ...prev, featured_image: url }))
-    }
-  }
-
   const handleSave = async () => {
     if (!formData.title || !formData.slug || !formData.content) {
       toast({
-        title: "Validation error",
+        title: "Validation Error",
         description: "Title, slug, and content are required",
         variant: "destructive",
       })
@@ -131,37 +84,34 @@ export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
     }
 
     setIsLoading(true)
+
     try {
-      const supabase = createClient()
-
-      if (post?.id) {
-        // Update existing post
-        const { error } = await supabase
-          .from("blog_posts")
-          .update({
-            ...formData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", post.id)
-
-        if (error) throw error
-      } else {
-        // Create new post
-        const { error } = await supabase.from("blog_posts").insert([formData])
-
-        if (error) throw error
-      }
-
-      toast({
-        title: "Success",
-        description: post?.id ? "Post updated successfully" : "Post created successfully",
+      const method = post?.id ? "PUT" : "POST"
+      const response = await fetch("/api/blog-posts", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       })
 
-      if (onSave) onSave()
-    } catch (error: any) {
+      const data = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Post ${post?.id ? "updated" : "created"} successfully`,
+        })
+        onSave?.()
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to save post",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
       toast({
-        title: "Save failed",
-        description: error.message || "Failed to save post",
+        title: "Error",
+        description: "Network error occurred",
         variant: "destructive",
       })
     } finally {
@@ -177,7 +127,7 @@ export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
               value={formData.title}
@@ -186,12 +136,12 @@ export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
             />
           </div>
           <div>
-            <Label htmlFor="slug">URL Slug</Label>
+            <Label htmlFor="slug">URL Slug *</Label>
             <Input
               id="slug"
               value={formData.slug}
               onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
-              placeholder="url-slug"
+              placeholder="url-friendly-slug"
             />
           </div>
         </div>
@@ -208,60 +158,27 @@ export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
         </div>
 
         <div>
-          <Label>Featured Image</Label>
-          <div className="space-y-2">
-            <Input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFeaturedImageUpload}
-              accept="image/*"
-              disabled={imageUploading}
-            />
-            {formData.featured_image && (
-              <img
-                src={formData.featured_image || "/placeholder.svg"}
-                alt="Featured"
-                className="w-32 h-32 object-cover rounded"
-              />
-            )}
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="content">Content</Label>
-          <div className="border rounded-md">
-            <div className="border-b p-2 flex flex-wrap gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => insertFormatting("**", "**")}>
-                Bold
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => insertFormatting("*", "*")}>
-                Italic
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => insertFormatting("## ")}>
-                H2
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => insertFormatting("### ")}>
-                H3
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => insertFormatting("[", "](url)")}>
-                Link
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => insertFormatting("- ")}>
-                List
-              </Button>
-            </div>
-            <Textarea
-              ref={contentRef}
-              value={formData.content}
-              onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
-              placeholder="Write your post content in Markdown..."
-              rows={15}
-              className="border-0 resize-none focus:ring-0"
-            />
-          </div>
+          <Label htmlFor="content">Content *</Label>
+          <Textarea
+            id="content"
+            value={formData.content}
+            onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
+            placeholder="Write your post content in Markdown..."
+            rows={15}
+            className="font-mono"
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="featured_image">Featured Image URL</Label>
+            <Input
+              id="featured_image"
+              value={formData.featured_image}
+              onChange={(e) => setFormData((prev) => ({ ...prev, featured_image: e.target.value }))}
+              placeholder="https://example.com/image.jpg"
+            />
+          </div>
           <div>
             <Label htmlFor="keywords">Keywords</Label>
             <Input
@@ -271,15 +188,17 @@ export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
               placeholder="keyword1, keyword2, keyword3"
             />
           </div>
-          <div>
-            <Label htmlFor="meta_description">Meta Description</Label>
-            <Input
-              id="meta_description"
-              value={formData.meta_description}
-              onChange={(e) => setFormData((prev) => ({ ...prev, meta_description: e.target.value }))}
-              placeholder="SEO meta description"
-            />
-          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="meta_description">Meta Description</Label>
+          <Textarea
+            id="meta_description"
+            value={formData.meta_description}
+            onChange={(e) => setFormData((prev) => ({ ...prev, meta_description: e.target.value }))}
+            placeholder="SEO meta description (150-160 characters)"
+            rows={2}
+          />
         </div>
 
         <div className="flex items-center space-x-2">
@@ -291,10 +210,15 @@ export function BlogPostEditor({ post, onSave }: BlogPostEditorProps) {
           <Label htmlFor="published">Published</Label>
         </div>
 
-        <div className="flex justify-end space-x-2">
+        <div className="flex gap-4">
           <Button onClick={handleSave} disabled={isLoading}>
             {isLoading ? "Saving..." : post?.id ? "Update Post" : "Create Post"}
           </Button>
+          {post && (
+            <Button variant="outline" onClick={() => onSave?.()}>
+              Cancel
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
