@@ -1,4 +1,4 @@
-# Invoice Factoring for Noobs: The Complete Beginner's Guide to Getting Paid Faster
+# Invoice Factoring for Noobs: Getting Paid Faster
 
 Running a business means dealing with cash flow challenges, especially when clients take 30, 60, or even 90 days to pay their invoices. While you're waiting for payments, you still need to pay employees, rent, suppliers, and other expenses. This cash flow gap can cripple growing businesses and prevent you from taking on new opportunities.
 
