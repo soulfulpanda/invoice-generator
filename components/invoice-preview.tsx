@@ -296,3 +296,4 @@ export function InvoicePreview({ invoice, onBack, user }: InvoicePreviewProps) {
     </div>
   )
 }
+// Note
