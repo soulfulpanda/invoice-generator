@@ -40,7 +40,7 @@ export default function HomePage() {
 
   const handleBackToForm = () => {
     setShowPreview(false)
-    // Keep the current invoice data for editing
+    // Keeping the current invoice data for editing
   }
 
   if (showPreview && currentInvoice) {
