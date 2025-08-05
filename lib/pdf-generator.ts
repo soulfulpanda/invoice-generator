@@ -56,7 +56,7 @@ export async function generatePDF(invoice: Invoice, design = "minimal") {
   // Set font
   doc.setFont("helvetica")
 
-  // Add logo if available
+  // To Add logo if available
   let yPos = 20 // Initial Y position
   if (invoice.logo) {
     try {
