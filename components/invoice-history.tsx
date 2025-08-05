@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Copy, Trash2, Download } from "lucide-react"
+import { Edit, Copy, Trash2, Download, AlertCircle, CheckCircle } from "lucide-react"
 import { createClient } from "@/lib/supabase"
 import { generatePDF } from "@/lib/pdf-generator"
 import type { Invoice } from "@/types/invoice"
@@ -75,6 +75,44 @@ export function InvoiceHistory({ user, onEditInvoice }: InvoiceHistoryProps) {
     }
   }
 
+  const clearAllLocalData = () => {
+    if (!user && confirm("Are you sure you want to clear all local invoice data? This action cannot be undone.")) {
+      localStorage.removeItem("invoices")
+      setInvoices([])
+    }
+  }
+
+  const changeInvoiceStatus = async (invoiceId: string, newStatus: string) => {
+    if (!user) {
+      // Update in localStorage
+      const savedInvoices = JSON.parse(localStorage.getItem("invoices") || "[]")
+      const updatedInvoices = savedInvoices.map((inv: Invoice) => 
+        inv.id === invoiceId ? { ...inv, status: newStatus } : inv
+      )
+      localStorage.setItem("invoices", JSON.stringify(updatedInvoices))
+      setInvoices(updatedInvoices)
+      return
+    }
+
+    try {
+      const invoice = invoices.find(inv => inv.id === invoiceId)
+      if (invoice) {
+        const updatedInvoice = { ...invoice, status: newStatus }
+        const { error } = await supabase.from("invoices").update({
+          invoice_data: updatedInvoice
+        }).eq("id", invoiceId)
+
+        if (error) throw error
+
+        setInvoices((prev) => prev.map(inv => 
+          inv.id === invoiceId ? updatedInvoice : inv
+        ))
+      }
+    } catch (error) {
+      console.error("Error updating invoice status:", error)
+    }
+  }
+
   const duplicateInvoice = (invoice: Invoice) => {
     const duplicatedInvoice = {
       ...invoice,
@@ -125,6 +163,28 @@ export function InvoiceHistory({ user, onEditInvoice }: InvoiceHistoryProps) {
 
   return (
     <div className="space-y-4">
+      {!user && invoices.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2 text-amber-600">
+              <AlertCircle className="h-5 w-5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Local Storage</p>
+                <p className="text-xs">Your invoices are stored locally. They will be lost if you clear browser data.</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearAllLocalData}
+                className="text-red-600 hover:text-red-700"
+              >
+                Clear All Data
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Invoice History</h2>
         <p className="text-gray-600">
@@ -165,6 +225,18 @@ export function InvoiceHistory({ user, onEditInvoice }: InvoiceHistoryProps) {
                       <Button variant="outline" size="sm" onClick={() => generatePDF(invoice)}>
                         <Download className="h-4 w-4" />
                       </Button>
+                      {invoice.status !== "paid" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => changeInvoiceStatus(invoice.id, "paid")}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                          title="Mark as Paid"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          <span className="hidden sm:inline">Paid</span>
+                        </Button>
+                      )}
                       <Button variant="outline" size="sm" onClick={() => deleteInvoice(invoice.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>

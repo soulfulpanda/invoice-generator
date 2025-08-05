@@ -86,16 +86,22 @@ export function InvoiceForm({ onPreview, user, initialInvoice }: InvoiceFormProp
     notes: "",
     terms: "",
     logo: null,
-    status: "draft",
+    status: "unpaid",
   })
 
   const supabase = createClient()
 
   useEffect(() => {
     if (initialInvoice) {
-      setInvoice(initialInvoice)
-    } else {
-      // Generate invoice number
+      // Ensure all fields are properly populated
+      setInvoice({
+        ...initialInvoice,
+        items: initialInvoice.items && initialInvoice.items.length > 0 
+          ? initialInvoice.items 
+          : [{ description: "", quantity: 1, rate: 0, amount: 0 }]
+      })
+    } else if (!invoice.invoiceNumber) {
+      // Only generate new invoice number if we don't already have one
       const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`
       setInvoice((prev) => ({ ...prev, invoiceNumber }))
     }
@@ -162,9 +168,27 @@ export function InvoiceForm({ onPreview, user, initialInvoice }: InvoiceFormProp
     if (!user) {
       // Save to localStorage
       const savedInvoices = JSON.parse(localStorage.getItem("invoices") || "[]")
-      const invoiceToSave = { ...invoice, id: Date.now().toString() }
-      savedInvoices.push(invoiceToSave)
-      localStorage.setItem("invoices", JSON.stringify(savedInvoices))
+      
+      if (invoice.id) {
+        // Update existing invoice
+        const updatedInvoices = savedInvoices.map((inv: Invoice) => 
+          inv.id === invoice.id ? invoice : inv
+        )
+        localStorage.setItem("invoices", JSON.stringify(updatedInvoices))
+      } else {
+        // Create new invoice - check if it already exists by invoice number
+        const existingInvoice = savedInvoices.find((inv: Invoice) => 
+          inv.invoiceNumber === invoice.invoiceNumber
+        )
+        
+        if (!existingInvoice) {
+          const invoiceToSave = { ...invoice, id: Date.now().toString() }
+          savedInvoices.push(invoiceToSave)
+          localStorage.setItem("invoices", JSON.stringify(savedInvoices))
+          // Update the current invoice with the new ID
+          setInvoice(prev => ({ ...prev, id: invoiceToSave.id }))
+        }
+      }
       return
     }
 
@@ -240,7 +264,7 @@ export function InvoiceForm({ onPreview, user, initialInvoice }: InvoiceFormProp
           <CardTitle>Invoice Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="invoiceNumber">Invoice Number</Label>
               <Input
@@ -266,6 +290,23 @@ export function InvoiceForm({ onPreview, user, initialInvoice }: InvoiceFormProp
                 value={invoice.dueDate}
                 onChange={(e) => setInvoice((prev) => ({ ...prev, dueDate: e.target.value }))}
               />
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={invoice.status}
+                onValueChange={(value) => setInvoice((prev) => ({ ...prev, status: value as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>

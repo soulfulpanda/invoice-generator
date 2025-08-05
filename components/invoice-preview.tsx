@@ -23,10 +23,12 @@ const currencies = [
 ]
 
 const designs = [
-  { id: "minimal", name: "Minimal", colors: "bg-white text-gray-900" },
-  { id: "modern", name: "Modern", colors: "bg-blue-50 text-blue-900" },
-  { id: "elegant", name: "Elegant", colors: "bg-purple-50 text-purple-900" },
-  { id: "vibrant", name: "Vibrant", colors: "bg-red-50 text-red-900" },
+  { id: "minimal", name: "Minimal", colors: "bg-white text-gray-900", description: "Clean and simple" },
+  { id: "modern", name: "Modern", colors: "bg-blue-50 text-blue-900", description: "Professional blue theme" },
+  { id: "elegant", name: "Elegant", colors: "bg-purple-50 text-purple-900", description: "Sophisticated purple" },
+  { id: "vibrant", name: "Vibrant", colors: "bg-red-50 text-red-900", description: "Bold and energetic" },
+  { id: "corporate", name: "Corporate", colors: "bg-slate-50 text-slate-900", description: "Professional gray" },
+  { id: "creative", name: "Creative", colors: "bg-emerald-50 text-emerald-900", description: "Fresh green theme" },
 ]
 
 export function InvoicePreview({ invoice, onBack, user }: InvoicePreviewProps) {
@@ -66,6 +68,24 @@ export function InvoicePreview({ invoice, onBack, user }: InvoicePreviewProps) {
           text: "text-red-800",
           secondary: "text-red-600",
           accent: "bg-red-100",
+        }
+      case "corporate":
+        return {
+          container: "bg-slate-50",
+          card: "bg-white border-slate-200",
+          title: "text-slate-900",
+          text: "text-slate-800",
+          secondary: "text-slate-600",
+          accent: "bg-slate-100",
+        }
+      case "creative":
+        return {
+          container: "bg-emerald-50",
+          card: "bg-white border-emerald-200",
+          title: "text-emerald-900",
+          text: "text-emerald-800",
+          secondary: "text-emerald-600",
+          accent: "bg-emerald-100",
         }
       default:
         return {

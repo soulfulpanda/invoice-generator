@@ -56,14 +56,33 @@ export async function generatePDF(invoice: Invoice, design = "minimal") {
   // Set font
   doc.setFont("helvetica")
 
+  // Add logo if available
+  let yPos = 20 // Initial Y position
+  if (invoice.logo) {
+    try {
+      const imgWidth = 35
+      const imgHeight = 20
+      doc.addImage(invoice.logo, "PNG", 20, yPos, imgWidth, imgHeight)
+      yPos += imgHeight + 5 // Add space below logo
+    } catch (error) {
+      try {
+        doc.addImage(invoice.logo, "JPEG", 20, yPos, imgWidth, imgHeight)
+        yPos += imgHeight + 5 // Add space below logo
+      } catch (e) {
+        console.warn("Could not add logo to PDF", e)
+      }
+    }
+  }
+
   // Header
   doc.setFontSize(28)
   doc.setTextColor(theme.primary)
-  doc.text("INVOICE", 20, 30)
+  doc.text("INVOICE", 20, yPos)
+  yPos += 10
 
   doc.setFontSize(12)
   doc.setTextColor(theme.secondary)
-  doc.text(`#${invoice.invoiceNumber}`, 20, 40)
+  doc.text(`#${invoice.invoiceNumber}`, 20, yPos)
 
   // Date info
   doc.setFontSize(10)
@@ -73,7 +92,7 @@ export async function generatePDF(invoice: Invoice, design = "minimal") {
   }
 
   // From/To sections
-  let yPos = 60
+  yPos = 80
 
   doc.setFontSize(10)
   doc.setTextColor(theme.secondary)

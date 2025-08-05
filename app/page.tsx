@@ -40,6 +40,7 @@ export default function HomePage() {
 
   const handleBackToForm = () => {
     setShowPreview(false)
+    // Keep the current invoice data for editing
   }
 
   if (showPreview && currentInvoice) {
@@ -56,30 +57,29 @@ export default function HomePage() {
               <FileText className="h-4 w-4 mr-2" />
               Create Invoice
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center" disabled={!user}>
+            <TabsTrigger value="history" className="flex items-center">
               <History className="h-4 w-4 mr-2" />
-              Invoice History
+              Invoice History {!user && "(Local)"}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="create" className="mt-6">
-            <InvoiceForm onPreview={handlePreview} user={user} />
+            <InvoiceForm 
+              key={currentInvoice?.id || 'new'}
+              onPreview={handlePreview} 
+              user={user} 
+              initialInvoice={currentInvoice} 
+            />
           </TabsContent>
 
           <TabsContent value="history" className="mt-6">
-            {user ? (
-              <InvoiceHistory
-                user={user}
-                onEditInvoice={(invoice) => {
-                  setCurrentInvoice(invoice)
-                  setActiveTab("create")
-                }}
-              />
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500">Please sign in to view your invoice history.</p>
-              </div>
-            )}
+            <InvoiceHistory
+              user={user}
+              onEditInvoice={(invoice) => {
+                setCurrentInvoice(invoice)
+                setActiveTab("create")
+              }}
+            />
           </TabsContent>
         </Tabs>
       </main>
