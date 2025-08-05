@@ -56,7 +56,7 @@ export function InvoiceHistory({ user, onEditInvoice }: InvoiceHistoryProps) {
 
   const deleteInvoice = async (invoiceId: string) => {
     if (!user) {
-      // Delete from localStorage
+      // Deletes from localStorage
       const savedInvoices = JSON.parse(localStorage.getItem("invoices") || "[]")
       const updatedInvoices = savedInvoices.filter((inv: Invoice) => inv.id !== invoiceId)
       localStorage.setItem("invoices", JSON.stringify(updatedInvoices))
