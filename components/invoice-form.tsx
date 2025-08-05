@@ -93,7 +93,7 @@ export function InvoiceForm({ onPreview, user, initialInvoice }: InvoiceFormProp
 
   useEffect(() => {
     if (initialInvoice) {
-      // Ensure all fields are properly populated
+      // To Ensure all fields are properly populated
       setInvoice({
         ...initialInvoice,
         items: initialInvoice.items && initialInvoice.items.length > 0 
