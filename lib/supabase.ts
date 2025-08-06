@@ -3,7 +3,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Mock client for when Supabase is not configured
+// This Mock client for when Supabase is not configured
 const mockSupabaseClient = {
   auth: {
     getSession: () => Promise.resolve({ data: { session: null }, error: null }),
