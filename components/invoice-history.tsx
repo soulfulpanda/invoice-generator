@@ -166,17 +166,19 @@ export function InvoiceHistory({ user, onEditInvoice }: InvoiceHistoryProps) {
       {!user && invoices.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center space-x-2 text-amber-600">
-              <AlertCircle className="h-5 w-5" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Local Storage</p>
-                <p className="text-xs">Your invoices are stored locally. They will be lost if you clear browser data.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2 text-amber-600">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Local Storage</p>
+                  <p className="text-xs break-words">Your invoices are stored locally. They will be lost if you clear browser data.</p>
+                </div>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={clearAllLocalData}
-                className="text-red-600 hover:text-red-700"
+                className="text-red-600 hover:text-red-700 self-start sm:self-auto flex-shrink-0"
               >
                 Clear All Data
               </Button>
@@ -185,9 +187,9 @@ export function InvoiceHistory({ user, onEditInvoice }: InvoiceHistoryProps) {
         </Card>
       )}
       
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Invoice History</h2>
-        <p className="text-gray-600">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0">
+        <h2 className="text-xl sm:text-2xl font-bold">Invoice History</h2>
+        <p className="text-sm sm:text-base text-gray-600">
           {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
         </p>
       </div>
@@ -197,33 +199,36 @@ export function InvoiceHistory({ user, onEditInvoice }: InvoiceHistoryProps) {
           const currency = currencies.find((c) => c.code === invoice.currency)
           return (
             <Card key={invoice.id}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-3">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                       <h3 className="font-semibold text-lg">#{invoice.invoiceNumber}</h3>
                       <Badge className={getStatusColor(invoice.status)}>{invoice.status}</Badge>
                     </div>
-                    <p className="text-gray-600">{invoice.recipient.name}</p>
-                    <div className="flex space-x-4 text-sm text-gray-500">
+                    <p className="text-gray-600 break-words">{invoice.recipient.name}</p>
+                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-1 sm:space-y-0 text-sm text-gray-500">
                       <span>Date: {new Date(invoice.date).toLocaleDateString()}</span>
                       {invoice.dueDate && <span>Due: {new Date(invoice.dueDate).toLocaleDateString()}</span>}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold">
+                  <div className="text-left sm:text-right">
+                    <p className="text-xl sm:text-2xl font-bold">
                       {currency?.symbol}
                       {invoice.total.toFixed(2)}
                     </p>
-                    <div className="flex space-x-1 mt-3">
+                    <div className="flex flex-wrap gap-1 mt-3">
                       <Button variant="outline" size="sm" onClick={() => onEditInvoice(invoice)}>
                         <Edit className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => duplicateInvoice(invoice)}>
                         <Copy className="h-4 w-4" />
+                        <span className="sr-only">Duplicate</span>
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => generatePDF(invoice)}>
                         <Download className="h-4 w-4" />
+                        <span className="sr-only">Download</span>
                       </Button>
                       {invoice.status !== "paid" && (
                         <Button 
@@ -233,12 +238,14 @@ export function InvoiceHistory({ user, onEditInvoice }: InvoiceHistoryProps) {
                           className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
                           title="Mark as Paid"
                         >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          <span className="hidden sm:inline">Paid</span>
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="hidden sm:inline ml-1">Paid</span>
+                          <span className="sr-only sm:hidden">Mark as Paid</span>
                         </Button>
                       )}
                       <Button variant="outline" size="sm" onClick={() => deleteInvoice(invoice.id)}>
                         <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
                       </Button>
                     </div>
                   </div>
